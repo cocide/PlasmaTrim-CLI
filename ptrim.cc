@@ -792,7 +792,7 @@ void fade(hid_device *handle, char *userColor, char *fadeTime, unsigned char bri
 	for (j=0; j<24; j++) {
 		x = origColor[j];
 		y = newColor[j];
-		colorDiff[j] = (x-y) / steps;
+		colorDiff[j] = (double) (x-y) / steps;
 
 	}
 	for (i=0; i<steps-1; i++) {
