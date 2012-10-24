@@ -7,6 +7,7 @@ Mac and Linux each have a folder in the repo, cd into the approperate folder for
 
 Things that Need to Eventually Happen
 =====================================
+
 On the fly control of multiple units
   The basic idea is that you give a sequence, or set of sequences, to the devices and they stay synced.
   This probably won't upload the sequence to the device and therefore would not be saved after a power cycle.
@@ -20,6 +21,14 @@ Better fade timing.
 
 Log of Change
 =============
+
+And then there were two
+Oct 24 2012 - v0.2.0
+  Added multithread support for Linux/Mac (still no Windows support at all)
+  Multiple devices can now be controlled at the same time, the result is the ability to use a sequence on several devices and they do not drift
+  Added the ability to call multiple devices by wrapping a set of space seperated paths or serials in quotes
+  Added the ability to call all devices by using 'all' instead of a path or serial
+
 
 It's better than before, just no one will notice
 Oct 24 2012 - v0.1.1
