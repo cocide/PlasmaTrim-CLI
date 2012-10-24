@@ -1,6 +1,7 @@
 /*******************************************************
-PlasmaTrim CLI goodness v0.1.0
-Andrew Toy Oct 23 2012
+PlasmaTrim CLI goodness
+Andrew Toy
+Started: Oct 23 2012
 
 Credit where credit is due:
 	Signal 11: http://www.signal11.us/oss/hidapi/
@@ -38,9 +39,9 @@ char *getSerial(hid_device *handle);
 char *getName(hid_device *handle);
 void setName(hid_device *handle, char *name);
 
-int getBrightness(hid_device *handle);
-int makeBrightness(int brightness);
-void setBrightness(hid_device *handle, int brightness);
+unsigned char getBrightness(hid_device *handle);
+unsigned char makeBrightness(int brightness);
+void setBrightness(hid_device *handle, unsigned char brightness);
 
 
 void start(hid_device *handle);
@@ -50,16 +51,18 @@ void stop(hid_device *handle);
 char *getColor(hid_device *handle);
 char *makeHumanColor(char* data);
 unsigned char *makeColor(char *color, bool full_length);
-void setColor(hid_device *handle, unsigned char *color, int brightness);
+void setColor(hid_device *handle, unsigned char *color, unsigned char brightness);
 
 void download(hid_device *handle, char *filename, bool blank);
 void upload(hid_device *handle, char *filename, bool blank);
 
-int getActiveSlots(hid_device *handle);
-void setActiveSlots(hid_device *handle, int slots);
+unsigned char getActiveSlots(hid_device *handle);
+void setActiveSlots(hid_device *handle, unsigned char slots);
 
-void fade(hid_device *handle, char *userColor, char *fadeTime);
+void fade(hid_device *handle, char *userColor, char *fadeTime, unsigned char brightness);
 
+void readData(hid_device *handle);
+void delay(unsigned int ms);
 
 void help();
 
@@ -83,20 +86,20 @@ int main(int argc, char* argv[]) {
 				hid_set_nonblocking(handle, 1);
 
 				showInfo(handle);
-				printf("Path: %s\n", cur_dev->path);
+				printf("Path: %s\r\n", cur_dev->path);
 
 				hid_close(handle);
 			}
-			printf("\n");
+			printf("\r\n");
 
 			cur_dev = cur_dev->next;
 		}
 		hid_free_enumeration(devs);
 		if (number == 1) {
 			//use a bit better english for only one device
-			printf("1 PlasmaTrim was found.\n");
+			printf("1 PlasmaTrim was found.\r\n");
 		} else {
-			printf("%d PlasmaTrims were found.\n", number);
+			printf("%d PlasmaTrims were found.\r\n", number);
 		}
 		return 0;
 
@@ -109,7 +112,7 @@ int main(int argc, char* argv[]) {
 
 			handle = hid_open_path(argv[1]);
 			if (!handle) {
-				printf("Could not open device at that path!\n");
+				fprintf(stderr, "Could not open device at that path!\r\n");
 				return 1;
 			}
 			
@@ -135,28 +138,30 @@ int main(int argc, char* argv[]) {
 			}
 			hid_free_enumeration(devs);
 			if (!found) {
-				printf("PlasmaTrim not found or could not be opened.\n");
+				fprintf(stderr, "PlasmaTrim not found or could not be opened.\r\n");
 				return 1;
 			}
 		}
 
 	} 
-	if (handle && argc > 2) {
+	if (handle && argc == 2) {
+		showInfo(handle);
+	} else if (handle && argc > 2) {
 		if (strcmp(argv[2], "info") == 0) {
 			showInfo(handle);
 		} else if (strcmp(argv[2], "serial") == 0) {
-			printf("%s\n", getSerial(handle));
+			printf("%s\r\n", getSerial(handle));
 		} else if (strcmp(argv[2], "name") == 0) {
 			if (argc > 3) {
 				setName(handle, argv[3]);
 			} else {
-				printf("%s\n", getName(handle));
+				printf("%s\r\n", getName(handle));
 			}
 		} else if (strcmp(argv[2], "brightness") == 0) {
 			if (argc > 3) {
 				setBrightness(handle, makeBrightness(atoi(argv[3])));
 			} else {
-				printf("%d\n", getBrightness(handle));
+				printf("%d\r\n", getBrightness(handle));
 			}
 		} else if (strcmp(argv[2], "start") == 0) {
 			start(handle);
@@ -168,7 +173,7 @@ int main(int argc, char* argv[]) {
 			} else if (argc > 3) {
 				setColor(handle, makeColor(argv[3], true), getBrightness(handle));
 			} else {
-				printf("%s\n", makeHumanColor(getColor(handle)));
+				printf("%s\r\n", makeHumanColor(getColor(handle)));
 			}
 		} else if (strcmp(argv[2], "download") == 0) {
 			if (argc > 3) {
@@ -195,7 +200,11 @@ int main(int argc, char* argv[]) {
 				upload(handle, "stdin", false);
 			}
 		} else if (strcmp(argv[2], "fade") == 0) {
-			fade(handle, argv[3], argv[4]);
+			if (argc > 5) {
+				fade(handle, argv[3], argv[4], makeBrightness(atoi(argv[5])));
+			} else {
+				fade(handle, argv[3], argv[4], getBrightness(handle));
+			}
 		} else {
 			help();
 		}
@@ -218,16 +227,17 @@ int main(int argc, char* argv[]) {
 
 
 void showInfo(hid_device *handle) {
-	printf("Name: %s\n", getName(handle));
-	printf("Serial: %s\n", getSerial(handle));
-	printf("Saved Brightness: %d%%\n", getBrightness(handle));
-	printf("Showing: %s\n", makeHumanColor(getColor(handle)));
+	printf("Name: %s\r\n", getName(handle));
+	printf("Serial: %s\r\n", getSerial(handle));
+	printf("Saved Brightness: %d%%\r\n", getBrightness(handle));
+	printf("Showing: %s\r\n", makeHumanColor(getColor(handle)));
 }
 
 char *getSerial(hid_device *handle) {
 	unsigned char cmd[32];
 	char* buf = new char[9];
-	int i, res = 0;
+	unsigned char i;
+	char res = 0;
 
 	memset(cmd,0x00,32);
 	memset(buf,0x00,9);
@@ -238,11 +248,7 @@ char *getSerial(hid_device *handle) {
 	while (res == 0) {
 		res = hid_read(handle, cmd, sizeof(cmd));
 		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
+		delay(1);
 	}
 
 	// get the serial in the correct (reverse) order and convert it to ascii
@@ -266,7 +272,8 @@ char *getSerial(hid_device *handle) {
 char *getName(hid_device *handle) {
 	unsigned char cmd[32];
 	char* buf = new char[27];
-	int i, res = 0;
+	unsigned char i;
+	char res = 0;
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x09;
@@ -276,11 +283,7 @@ char *getName(hid_device *handle) {
 	while (res == 0) {
 		res = hid_read(handle, cmd, sizeof(cmd));
 		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
+		delay(1);
 	}
 
 	// shift it over by one to remove the command code
@@ -292,9 +295,8 @@ char *getName(hid_device *handle) {
 }
 
 void setName(hid_device *handle, char *name) {
-	int length=strlen(name);
-	int i, res = 0;
-	unsigned char cmd[32];
+	unsigned int length=strlen(name);
+	unsigned char i, cmd[32];
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x08;
@@ -308,26 +310,16 @@ void setName(hid_device *handle, char *name) {
 		cmd[i+1] = name[i];
 	}
 
-
 	hid_write(handle, cmd, 32);
-
-	while (res == 0) {
-		res = hid_read(handle, cmd, sizeof(cmd));
-		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
-	}
+	readData(handle);
 
 }
 
 
 
-int getBrightness(hid_device *handle) {
+unsigned char getBrightness(hid_device *handle) {
 	unsigned char cmd[32];
-	int res = 0;
+	char res = 0;
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x0C;
@@ -337,17 +329,13 @@ int getBrightness(hid_device *handle) {
 	while (res == 0) {
 		res = hid_read(handle, cmd, sizeof(cmd));
 		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
+		delay(1);
 	}
 
 	return cmd[1];
 }
 
-int makeBrightness(int brightness) {
+unsigned char makeBrightness(int brightness) {
 	if (brightness > 100) {
 		brightness = 100;
 	} else if (brightness < 1) {
@@ -356,74 +344,45 @@ int makeBrightness(int brightness) {
 	return brightness;
 }
 
-void setBrightness(hid_device *handle, int brightness) {
+void setBrightness(hid_device *handle, unsigned char brightness) {
 	unsigned char cmd[32];
-	int res=0;
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x0B;
 	cmd[1] = brightness;
 
 	hid_write(handle, cmd, 32);
-
-	while (res == 0) {
-		res = hid_read(handle, cmd, sizeof(cmd));
-		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
-	}
+	readData(handle);
 }
 
 
 
 void start(hid_device *handle) {
 	unsigned char cmd[32];
-	int res=0;
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x02;
 
 	hid_write(handle, cmd, 32);
-
-	while (res == 0) {
-		res = hid_read(handle, cmd, sizeof(cmd));
-		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
-	}
+	readData(handle);
 }
 
 void stop(hid_device *handle) {
 	unsigned char cmd[32];
-	int res=0;
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x03;
 
 	hid_write(handle, cmd, 32);
-
-	while (res == 0) {
-		res = hid_read(handle, cmd, sizeof(cmd));
-		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
-	}
+	readData(handle);
 }
 
 
 char *getColor(hid_device *handle) {
 	unsigned char cmd[32];
 	char* buf = new char[49];
-	int i, res = 0;
+	unsigned char i;
+	char res = 0;
 
 	memset(cmd,0x00,32);
 	memset(buf,0x00,49);
@@ -434,11 +393,7 @@ char *getColor(hid_device *handle) {
 	while (res == 0) {
 		res = hid_read(handle, cmd, sizeof(cmd));
 		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
+		delay(1);
 	}
 
 	// get the color and convert it
@@ -459,7 +414,7 @@ char *getColor(hid_device *handle) {
 }
 
 char *makeHumanColor(char* data) {
-	int i, j, s = 0;
+	unsigned char i, j, s = 0;
 
 	char* color = new char[56];
 	memset(color,0x00,56);
@@ -477,7 +432,7 @@ char *makeHumanColor(char* data) {
 }
 
 unsigned char *makeColor(char* color, bool full_length) {
-	int i, j, offset = 0;
+	unsigned char i, j, offset = 0;
 	char* color_standardized = new char[49];
 	memset(color_standardized,0x00,49);
 
@@ -591,9 +546,9 @@ unsigned char *makeColor(char* color, bool full_length) {
 	return buf;
 }
 
-void setColor(hid_device *handle, unsigned char *color, int brightness) {
+void setColor(hid_device *handle, unsigned char *color, unsigned char brightness) {
 	unsigned char cmd[32];
-	int i, res=0;
+	unsigned char i;
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x00;
@@ -604,29 +559,19 @@ void setColor(hid_device *handle, unsigned char *color, int brightness) {
 	cmd[25] = brightness;
 
 	hid_write(handle, cmd, 32);
-
-	while (res == 0) {
-		res = hid_read(handle, cmd, sizeof(cmd));
-		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
-	}
+	readData(handle);
 }
 
 void download(hid_device *handle, char *filename, bool blank) {
 
-	int i, j, slotsToGet = 76;
-	int hold, fade;
-	int activeSlots=getActiveSlots(handle);
+	unsigned char i, j, slotsToGet = 76, hold, fade;
+	unsigned char activeSlots=getActiveSlots(handle);
 	int length=strlen(filename);
 	char* extension = new char[7];
 	memset(extension,0x00,7);
 
 	unsigned char cmd[32];
-	int res = 0;
+	char res = 0;
 
 	if (blank) {
 		slotsToGet = activeSlots;
@@ -664,11 +609,7 @@ void download(hid_device *handle, char *filename, bool blank) {
 		while (res == 0) {
 			res = hid_read(handle, cmd, sizeof(cmd));
 			
-			#ifdef WIN32
-				Sleep(1);
-			#else
-				usleep(1*1000);
-			#endif
+			delay(1);
 		}
 
 		hold = (cmd[14] >> 4) + 48;
@@ -697,13 +638,12 @@ void download(hid_device *handle, char *filename, bool blank) {
 
 
 void upload(hid_device *handle, char *filename, bool blank) {
-	int i;
-	int lineNumber = 0, activeSlots, slotsToLoad = 76;
+	unsigned char i, lineNumber = 0, activeSlots, slotsToLoad = 76;
 	bool knownType = true;
 	unsigned char *rawColor;
 
 	unsigned char cmd[32];
-	int res=0;
+	char res=0;
 
 	char* color = new char[25];
 
@@ -714,13 +654,20 @@ void upload(hid_device *handle, char *filename, bool blank) {
 		file = stdin;
 	}
 	if ( file != NULL ) {
+
+
 		stop(handle);
+
+		memset(color,0x00,25);
+		memset(color,'0',3);
+		setColor(handle, makeColor(color, true), 1); //set it to black because were nice
+
 		char line [ 256 ];
 		while ( knownType && fgets ( line, sizeof line, file ) != NULL ) {
 			lineNumber++;
 			if (lineNumber == 2 && strcmp (line, "Version: Simple Sequence Format\r\n") != 0) {
 				knownType = false;
-				printf("Unknown file format.\n");
+				printf("Unknown file format.\r\n");
 			} else if ( lineNumber == 3 ) {
 				activeSlots = ((line[14] - 48) * 10) + line[15] - 48;
 				if (blank) {
@@ -746,11 +693,7 @@ void upload(hid_device *handle, char *filename, bool blank) {
 				while (res == 0) {
 					res = hid_read(handle, cmd, sizeof(cmd));
 					
-					#ifdef WIN32
-						Sleep(1);
-					#else
-						usleep(1*1000);
-					#endif
+					delay(1);
 				}
 
 			}
@@ -761,14 +704,14 @@ void upload(hid_device *handle, char *filename, bool blank) {
 		setActiveSlots(handle, activeSlots);
 		start(handle);
 	} else {
-		printf("%s did not open.\n", filename );
+		printf("%s did not open.\r\n", filename );
 	}
 }
 
 
-int getActiveSlots(hid_device *handle) {
+unsigned char getActiveSlots(hid_device *handle) {
 	unsigned char cmd[32];
-	int res = 0;
+	char res = 0;
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x05;
@@ -778,19 +721,14 @@ int getActiveSlots(hid_device *handle) {
 	while (res == 0) {
 		res = hid_read(handle, cmd, sizeof(cmd));
 		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
+		delay(1);
 	}
 
 	return cmd[1];
 }
 
-void setActiveSlots(hid_device *handle, int slots) {
+void setActiveSlots(hid_device *handle, unsigned char slots) {
 	unsigned char cmd[32];
-	int res=0;
 
 	if (slots > 76) {
 		slots = 76;
@@ -803,26 +741,18 @@ void setActiveSlots(hid_device *handle, int slots) {
 	cmd[1] = slots;
 
 	hid_write(handle, cmd, 32);
-
-	while (res == 0) {
-		res = hid_read(handle, cmd, sizeof(cmd));
-		
-		#ifdef WIN32
-			Sleep(1);
-		#else
-			usleep(1*1000);
-		#endif
-	}
+	readData(handle);
 }
 
 
-void fade(hid_device *handle, char *userColor, char *fadeTime) {
+void fade(hid_device *handle, char *userColor, char *fadeTime, unsigned char brightness) {
 	// the delay times are pretty rough, I cant seem to get enough accuracy with them for the 5-a, everything past c was never tested for accuracy.
-	int i, j;
-	unsigned char x, y;
+	unsigned char i, j, x, y;
 	unsigned char* origColor = makeColor(getColor(handle), true);
 	unsigned char* newColor = makeColor(userColor, true);
-	int steps = 255, delay = 0;
+	unsigned char steps = 255;
+	unsigned int delayTime = 0;
+
 	if (strcmp(fadeTime, "0") == 0) {
 		steps = 2;
 	} else if (strcmp(fadeTime, "1") == 0) {
@@ -834,27 +764,27 @@ void fade(hid_device *handle, char *userColor, char *fadeTime) {
 	} else if (strcmp(fadeTime, "4") == 0) {
 		steps = 122;
 	} else if (strcmp(fadeTime, "5") == 0) {
-		delay = 3;
+		delayTime = 3;
 	} else if (strcmp(fadeTime, "6") == 0) {
-		delay = 11;
+		delayTime = 11;
 	} else if (strcmp(fadeTime, "7") == 0) {
-		delay = 28;
+		delayTime = 28;
 	} else if (strcmp(fadeTime, "8") == 0) {
-		delay = 50;
+		delayTime = 50;
 	} else if (strcmp(fadeTime, "9") == 0) {
-		delay = 110;
+		delayTime = 110;
 	} else if (strcmp(fadeTime, "a") == 0 || strcmp(fadeTime, "A") == 0) {
-		delay = 225;
+		delayTime = 225;
 	} else if (strcmp(fadeTime, "b") == 0 || strcmp(fadeTime, "B") == 0) {
-		delay = 580;
+		delayTime = 580;
 	} else if (strcmp(fadeTime, "c") == 0 || strcmp(fadeTime, "C") == 0) {
-		delay = 1200;
+		delayTime = 1200;
 	} else if (strcmp(fadeTime, "d") == 0 || strcmp(fadeTime, "D") == 0) {
-		delay = 2400;
+		delayTime = 2400;
 	} else if (strcmp(fadeTime, "e") == 0 || strcmp(fadeTime, "E") == 0) {
-		delay = 3600;
+		delayTime = 3600;
 	} else if (strcmp(fadeTime, "f") == 0 || strcmp(fadeTime, "F") == 0) {
-		delay = 7200;
+		delayTime = 7200;
 	}
 	unsigned char* colorTable[steps];
 	double colorDiff[24];
@@ -876,13 +806,9 @@ void fade(hid_device *handle, char *userColor, char *fadeTime) {
 		colorTable[i][j] = newColor[j];
 	}
 	for (i=0; i<steps; i++) {
-		setColor(handle, colorTable[i], 1);
+		setColor(handle, colorTable[i], brightness);
 		
-		#ifdef WIN32
-			Sleep(delay);
-		#else
-			usleep(delay*1000);
-		#endif
+		delay(delayTime);
 	}
 
 }
@@ -891,56 +817,76 @@ void fade(hid_device *handle, char *userColor, char *fadeTime) {
 
 
 
+void readData(hid_device *handle) {
+	//after every write we need to read the data from the buffer to prevent errors, but only sometimes we want the data, this reads the data we dont care about
+	char res;
+	unsigned char cmd[32];
+	memset(cmd,0x00,32);
 
+	while (res == 0) {
+		res = hid_read(handle, cmd, sizeof(cmd));
+		
+		delay(1);
+	}
+}
 
-
+void delay(unsigned int ms) {
+	#ifdef WIN32
+		Sleep(ms);
+	#else
+		usleep(ms*1000);
+	#endif
+}
 
 
 void help() {
-	printf("Some help for you:\n\n");
-	printf("ptrim\n");
-	printf("	list the PlasmaTrims that are hooked up to the system.\n");
-	printf("ptrim (serial|path) info\n");
-	printf("	print generic information about the device with the serial or at the path (basically the same as calling it w/o arguments)\n");
-	printf("ptrim (serial|path) serial\n");
-	printf("	print the serial number (rather pointless if you use serial numbers to call the script, but could be useful if you used the path)\n");
-	printf("ptrim (serial|path) name [new name]\n");
-	printf("	print the devices name or set it if a new name is give\n");
-	printf("	*NOTE* this will write to the non-volatile memory when you set the name, do not run this hundreds of thousands of times\n");
-	printf("\n");
-	printf("ptrim (serial|path) brightness [new brightness]\n");
-	printf("	print or set the brightness\n");
-	printf("	*NOTE* this will write to the non-volatile memory when you set the brightness, do not run this hundreds of thousands of times\n");
-	printf("\n");
-	printf("ptrim (serial|path) (start|stop)\n");
-	printf("	start or stop the sequence loaded to the device\n");
-	printf("\n");
-	printf("ptrim (serial|path) color [new color] [temporary brightness]\n");
-	printf("	show or set the colors the PlasmaTrim is displaying\n");
-	printf("	if a brightness is not given it will use the saved brightness, which could be different than the current brightness\n");
-	printf("	the new color string must be wrapped in quotes if it has spaces.\n");
-	printf("	the color string can be 3 or 6 characters - which will set all the LEDs to the same color (ie: 'FFF' and 'FFFFFF' are the same)\n");
-	printf("		it can also be 8 sets of 3 or 6 characters - which will set every LED to a different color (ex: 'F00 0F0 00F....')\n");
-	printf("	the new brightness is NOT saved to non-volatile memory\n");
-	printf("\n");
-	printf("ptrim (serial|path) fade (new color) (fade time)\n");
-	printf("	fade the PlasmaTrim to the new color over some time, the time is an estimate and uses the same numbering as the windows application and ptSeq files.\n");
-	printf("		0 => instant, almost same as color \n");
-	printf("		1 => 1/10 sec; 2 => 1/4; 3 => 1/2; 4 => 1 sec; 5 => 2.5; 6 => 5; 7 => 10; 8 => 15; 9 => 30 sec\n");
-	printf("		a => 1 min; b => 2.5; c => 5; d => 10; e => 15; f => 30 min\n");
-	printf("\n");
-	printf("ptrim (serial|path) download [filename]\n");
-	printf("	get the currently programmed sequence from the device (it will stop at the last active element then report black with no hold or fade for the rest)\n");
-	printf("	if no file is give it will print to stdout\n");
-	printf("ptrim (serial|path) full_download [filename]\n");
-	printf("	same as download except it will not stop reading at the last active slot (useful if you have stored some unfinished work after the last element)\n");
-	printf("\n");
-	printf("ptrim (serial|path) upload [filename]\n");
-	printf("	program the PlasmaTrim with the sequence file, if no file is given it will use stdin (you can pipe sequence files to it)\n");
-	printf("	if no file is given it will not overwrite the slots after the last active element (makes uploads faster)\n");
-	printf("	*NOTE* this will write to the non-volatile memory, do not run this hundreds of thousands of times\n");
-	printf("ptrim (serial|path) full_upload [filename]\n");
-	printf("	same as upload except it will not stop writing at the last active slot (useful if you would like to blackout the inactive elements, but it takes longer)\n");
-	printf("	*NOTE* this will write to the non-volatile memory, do not run this hundreds of thousands of times\n");
-	printf("\n");
+	printf("Version: 0.1.1\t From: Oct 24 2012\r\n");
+	printf("Codename: \"it's better than before, just no one will notice\"\r\n");
+	printf("\r\n");
+	printf("Some help for you:\r\n");
+	printf("ptrim\r\n");
+	printf("	list the PlasmaTrims that are hooked up to the system.\r\n");
+	printf("ptrim (serial|path) info\r\n");
+	printf("	print generic information about the device with the serial or at the path (basically the same as calling it w/o arguments)\r\n");
+	printf("ptrim (serial|path) serial\r\n");
+	printf("	print the serial number (rather pointless if you use serial numbers to call the script, but could be useful if you used the path)\r\n");
+	printf("ptrim (serial|path) name [new name]\r\n");
+	printf("	print the devices name or set it if a new name is give\r\n");
+	printf("	*NOTE* this will write to the non-volatile memory when you set the name, do not run this hundreds of thousands of times\r\n");
+	printf("\r\n");
+	printf("ptrim (serial|path) brightness [new brightness]\r\n");
+	printf("	print or set the brightness\r\n");
+	printf("	*NOTE* this will write to the non-volatile memory when you set the brightness, do not run this hundreds of thousands of times\r\n");
+	printf("\r\n");
+	printf("ptrim (serial|path) (start|stop)\r\n");
+	printf("	start or stop the sequence loaded to the device\r\n");
+	printf("\r\n");
+	printf("ptrim (serial|path) color [new color] [temporary brightness]\r\n");
+	printf("	show or set the colors the PlasmaTrim is displaying\r\n");
+	printf("	if a brightness is not given it will use the saved brightness, which could be different than the current brightness\r\n");
+	printf("	the new color string must be wrapped in quotes if it has spaces.\r\n");
+	printf("	the color string can be 3 or 6 characters - which will set all the LEDs to the same color (ie: 'FFF' and 'FFFFFF' are the same)\r\n");
+	printf("		it can also be 8 sets of 3 or 6 characters - which will set every LED to a different color (ex: 'F00 0F0 00F....')\r\n");
+	printf("	the new brightness is NOT saved to non-volatile memory\r\n");
+	printf("\r\n");
+	printf("ptrim (serial|path) fade (new color) (fade time) temporary [brightness]\r\n");
+	printf("	fade the PlasmaTrim to the new color over some time, the time is an estimate and uses the same numbering as the windows application and ptSeq files.\r\n");
+	printf("		0 => instant, almost same as color \r\n");
+	printf("		1 => 1/10 sec; 2 => 1/4; 3 => 1/2; 4 => 1 sec; 5 => 2.5; 6 => 5; 7 => 10; 8 => 15; 9 => 30 sec\r\n");
+	printf("		a => 1 min; b => 2.5; c => 5; d => 10; e => 15; f => 30 min\r\n");
+	printf("\r\n");
+	printf("ptrim (serial|path) download [filename]\r\n");
+	printf("	get the currently programmed sequence from the device (it will stop at the last active element then report black with no hold or fade for the rest)\r\n");
+	printf("	if no file is give it will print to stdout\r\n");
+	printf("ptrim (serial|path) full_download [filename]\r\n");
+	printf("	same as download except it will not stop reading at the last active slot (useful if you have stored some unfinished work after the last element)\r\n");
+	printf("\r\n");
+	printf("ptrim (serial|path) upload [filename]\r\n");
+	printf("	program the PlasmaTrim with the sequence file, if no file is given it will use stdin (you can pipe sequence files to it)\r\n");
+	printf("	if no file is given it will not overwrite the slots after the last active element (makes uploads faster)\r\n");
+	printf("	*NOTE* this will write to the non-volatile memory, do not run this hundreds of thousands of times\r\n");
+	printf("ptrim (serial|path) full_upload [filename]\r\n");
+	printf("	same as upload except it will not stop writing at the last active slot (useful if you would like to blackout the inactive elements, but it takes longer)\r\n");
+	printf("	*NOTE* this will write to the non-volatile memory, do not run this hundreds of thousands of times\r\n");
+	printf("\r\n");
 }
