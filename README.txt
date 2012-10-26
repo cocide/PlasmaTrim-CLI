@@ -1,26 +1,41 @@
 PlasmaTrim-CLI
 ==============
 
-Mac and Linux each have a folder in the repo, cd into the approperate folder for your system and make to compile
+Simply run make from the root directory to compile.
 ./ptrim help will give you more information about the options.
+
+including the ptrim-lib.h and hidapi.h will allow you to use these functions with your software, however you will need to handle all the hidapi connections.
 
 
 Things that Need to Eventually Happen
 =====================================
 
-On the fly control of multiple units
-  The basic idea is that you give a sequence, or set of sequences, to the devices and they stay synced.
-  This probably won't upload the sequence to the device and therefore would not be saved after a power cycle.
-    Because we are not loading the device you won't have a limit for amounts of 'slots'.
-    This could also have a start loop value so you can run an intro before the loop begins.
-  This might involve making a new .ptSeq format which needs to work with the current format and applications.
+Network support:
+  Eventually I will have a daemon that can just be ran and allow PlasmaTrims to be on the network over TCP.
+  It will automagically notice device addition/removals and allow multiple clients to control different units at the same time.
+  I really want it to support some form of mDNS autodiscovery, the idea being that any application that supports this protocol will just 'find' the PlasmaTrims automatically
 
-Better fade timing.
+On the fly control of multiple units:
+  Not sure how well this is working currently, time for others to test.
+
+Better fade timing:
   Currently this is rather rough, it seems that usleep is not all that accurate. Anyone got any ideas?
+
+Windows:
+  Eventually this needs to happen
 
 
 Log of Change
 =============
+
+Now with less fail
+Oct 25 2012 - v0.2.1
+  Commented a lot of code
+  Split the meat and potatos bit into its own file so it can be included by others
+  Made the stream command keep better sync of multiple devices
+  changed the folder structure up a lot
+  one Makefile in the root directory to be easier
+
 
 And then there were two
 Oct 24 2012 - v0.2.0
