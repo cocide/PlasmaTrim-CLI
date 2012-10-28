@@ -252,7 +252,7 @@ void clientWelcome( int fd ) {
 
 	send (fd, "[about]\r\n", 9, 0); //MSG_MORE);
 	send (fd, "PlasmaTrim Network Server\r\n", 27, 0); //MSG_MORE);
-	send (fd, "version 2.1.0\r\n", 15, 0); //MSG_MORE);
+	send (fd, "version 0.1.0\r\n", 15, 0); //MSG_MORE);
 
 	send (fd, "max devices ", 12, 0); //MSG_MORE);
 	send (fd, max_devices_string, 2, 0); //MSG_MORE);
