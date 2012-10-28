@@ -1,52 +1,4 @@
-/*******************************************************
-PlasmaTrim CLI goodness
-Andrew Toy
-Started: Oct 23 2012
-
-Credit where credit is due:
-	Signal 11: http:// www.signal11.us/oss/hidapi/
-		Provided the HID API this software is using, some slight modifications needed to be made to hid.c/hid-libusb.c to allow 0x00 commands, but other than that this is 100% based off their API.
-	Glohawk: http:// www.thephotonfactory.com/forum/viewtopic.php?f=5&t=104#p168
-		Filled in the gaps in the HID code table.
-
-Anyone may use, modify, distribute, and code from this work. Just make a footnote in some comment and all is good.
-********************************************************/
-
-#include <stdio.h>
-#include <wchar.h>
-#include <string.h>
-#include <stdlib.h>
-#include "hidapi.h"
-#include "ptrim-lib.h"
-
-
-// Headers needed for sleeping and therads
-#ifdef WIN32
-	#include <windows.h>
-#else
-	#include <unistd.h>
-	#include <pthread.h>
-#endif
-
-
-#ifdef WIN32
-	UNREFERENCED_PARAMETER(argc);
-	UNREFERENCED_PARAMETER(argv);
-#endif
-
-
-struct arg_struct {
-	int argc;
-	char** argv;
-	hid_device *handle;
-	unsigned char id;
-	unsigned char totalDevices;
-};
-
-struct hid_device_info *devs, *cur_dev;
-
-void *runCommand(void *arguments);
-void help();
+#include "ptrim.h"
 
 
 int main(int argc, char* argv[]) {
@@ -64,7 +16,6 @@ int main(int argc, char* argv[]) {
 				start_comm(handle[number_devices]);;
 
 				showInfo(handle[number_devices]);
-				printf("Path: %s\r\n", cur_dev->path);
 
 				number_devices++;
 			}
@@ -144,12 +95,6 @@ int main(int argc, char* argv[]) {
 						if (!found) {
 							fprintf(stderr, "PlasmaTrim %s not found or could not be opened.\r\n", device);
 						}
-					} else if (device[11] != 0x00 && device[12] == 0x00) {
-						// this is a path
-						path_list[paths_to_open] = new char[14];
-						strcpy(path_list[paths_to_open], device);
-						paths_to_open++;
-
 					}
 					// reset the device serial/path
 					memset(device,0x00,14);
@@ -168,16 +113,6 @@ int main(int argc, char* argv[]) {
 					number_devices++;
 					start_comm(handle[number_devices]);
 				}
-			}
-		} else if (argv[1][4] == ':') {
-			// a path was given
-			handle[number_devices] = hid_open_path(argv[1]);
-			if (!handle[number_devices]) {
-				fprintf(stderr, "Could not open device at that path!\r\n");
-				return 1;
-			} else {
-				number_devices++;
-				start_comm(handle[number_devices]);
 			}
 		} else {
 			// a serial number was given so find it
@@ -268,11 +203,6 @@ int main(int argc, char* argv[]) {
 }
 
 
-
-
-
-
-
 void *runCommand(void *arguments) {
 	// parse the user input and run the needed things
 	struct arg_struct *args = (struct arg_struct *)arguments;
@@ -355,35 +285,38 @@ void *runCommand(void *arguments) {
 
 
 void help() {
-	printf("Version: 0.2.1\t From: Oct 25 2012\r\n");
-	printf("Codename: \"Now with less fail\"\r\n");
+	printf("PlsamaTrim Utilities by Cocide v0.3.0 - Oct 28 2012\r\n");
+	printf("Codename: \"Got network?\"\r\n");
+	printf("ptrim-lib v0.2.2, ptrim v0.2.2\r\n");
 	printf("\r\n");
 	printf("Some help for you:\r\n");
-	printf("When calling multiple devices you must have either the serials or paths space separated and wrapped in quotes\r\n");
+	printf("When calling multiple devices you must have the serials space separated and wrapped in quotes\r\n");
 	printf("	ie \"00B12345 00B12346\" will work\r\n");
 	printf("	the keywork 'all' can also be used to call all devices\r\n");
 	printf("\r\n");
+	printf("Usage:\r\n");
+	printf("	ptrim-client host pin commands\r\n");
+	printf("	ptrim-client host port pin commands\r\n");
 	printf("\r\n");
 	printf("Command Overview:\r\n");
 	printf("\r\n");
-	printf("ptrim\r\n");
 	printf("	list the PlasmaTrims that are hooked up to the system.\r\n");
-	printf("ptrim (serial|path|multiple) info\r\n");
-	printf("	print generic information about the device with the serial or at the path (basically the same as calling it w/o arguments)\r\n");
-	printf("ptrim (serial|path|multiple) serial\r\n");
-	printf("	print the serial number (rather pointless if you use serial numbers to call the script, but could be useful if you used the path)\r\n");
-	printf("ptrim (serial|path|multiple) name [new name]\r\n");
+	printf("serial info\r\n");
+	printf("	print generic information about the device(s) with the serial (basically the same as calling it w/o arguments)\r\n");
+	printf("serial serial\r\n");
+	printf("	print the serial number (rather pointless if you use serial numbers to call the script)\r\n");
+	printf("serial name [new name]\r\n");
 	printf("	print the devices name or set it if a new name is give\r\n");
 	printf("	*NOTE* this will write to the non-volatile memory when you set the name, do not run this hundreds of thousands of times\r\n");
 	printf("\r\n");
-	printf("ptrim (serial|path|multiple) brightness [new brightness]\r\n");
+	printf("serial brightness [new brightness]\r\n");
 	printf("	print or set the brightness\r\n");
 	printf("	*NOTE* this will write to the non-volatile memory when you set the brightness, do not run this hundreds of thousands of times\r\n");
 	printf("\r\n");
-	printf("ptrim (serial|path|multiple) (start|stop)\r\n");
+	printf("serial (start|stop)\r\n");
 	printf("	start or stop the sequence loaded to the device\r\n");
 	printf("\r\n");
-	printf("ptrim (serial|path|multiple) color [new color] [temporary brightness]\r\n");
+	printf("serial color [new color] [temporary brightness]\r\n");
 	printf("	show or set the colors the PlasmaTrim is displaying\r\n");
 	printf("	if a brightness is not given it will use the saved brightness, which could be different than the current brightness\r\n");
 	printf("	the new color string must be wrapped in quotes if it has spaces.\r\n");
@@ -391,29 +324,113 @@ void help() {
 	printf("		it can also be 8 sets of 3 or 6 characters - which will set every LED to a different color (ex: 'F00 0F0 00F....')\r\n");
 	printf("	the new brightness is NOT saved to non-volatile memory\r\n");
 	printf("\r\n");
-	printf("ptrim (serial|path|multiple) fade (new color) (fade time) temporary [brightness]\r\n");
+	printf("serial fade (new color) (fade time) [temporary brightness]\r\n");
 	printf("	fade the PlasmaTrim to the new color over some time, the time is an estimate and uses the same numbering as the windows application and ptSeq files.\r\n");
 	printf("		0 => instant, almost same as color \r\n");
 	printf("		1 => 1/10 sec; 2 => 1/4; 3 => 1/2; 4 => 1 sec; 5 => 2.5; 6 => 5; 7 => 10; 8 => 15; 9 => 30 sec\r\n");
 	printf("		a => 1 min; b => 2.5; c => 5; d => 10; e => 15; f => 30 min\r\n");
 	printf("\r\n");
-	printf("ptrim (serial|path|multiple) download [filename]\r\n");
+	printf("serial download [filename]\r\n");
 	printf("	get the currently programmed sequence from the device (it will stop at the last active element then report black with no hold or fade for the rest)\r\n");
 	printf("	if no file is give it will print to stdout\r\n");
-	printf("ptrim (serial|path|multiple) full_download [filename]\r\n");
+	printf("serial full_download [filename]\r\n");
 	printf("	same as download except it will not stop reading at the last active slot (useful if you have stored some unfinished work after the last element)\r\n");
 	printf("\r\n");
-	printf("ptrim (serial|path|multiple) upload [filename]\r\n");
+	printf("serial upload [filename]\r\n");
 	printf("	program the PlasmaTrim with the sequence file, if no file is given it will use stdin (you can pipe sequence files to it)\r\n");
 	printf("	if no file is given it will not overwrite the slots after the last active element (makes uploads faster)\r\n");
 	printf("	*NOTE* this will write to the non-volatile memory, do not run this hundreds of thousands of times\r\n");
-	printf("ptrim (serial|path|multiple) full_upload [filename]\r\n");
+	printf("serial full_upload [filename]\r\n");
 	printf("	same as upload except it will not stop writing at the last active slot (useful if you would like to blackout the inactive elements, but it takes longer)\r\n");
 	printf("	*NOTE* this will write to the non-volatile memory, do not run this hundreds of thousands of times\r\n");
 	printf("\r\n");
-	printf("ptrim (serial|path|multiple) stream (filename) [temporary brightness]\r\n");
+	printf("serial stream (filename) [temporary brightness]\r\n");
 	printf("	send the sequence in the file to the device(s) without overwriting the current programming, optionally at a brightness level\r\n");
 	printf("	this is slightly slower than if the sequence ran on the device from programming, and it keeps in sync by waiting for them all to finish (USB has some lag at times)\r\n");
 	printf("	but the differences in timing between multiple units are minimial, you will probably never notice them since the units will always start together\r\n");
 	printf("\r\n");
+}
+
+void upload(hid_device *handle, char *filename, bool blank, unsigned char id, unsigned char totalDevices) {
+	// program a device
+	FILE *file;
+
+
+	int lineSize = 100 + (27 * MAX_DEVICES) ; // 27 characters per color set for however many devices (for uploading)
+	int numberLines = 1024;
+
+	char* fileData[numberLines];
+	int i, lineNumber = 0;
+
+	for (i=0; i<numberLines; i++) {
+		fileData[i]=new char[lineSize];
+	}
+
+
+
+	if (strcmp(filename, "stdin") != 0) {
+		file = fopen ( filename, "r" );
+	} else {
+		file = stdin;
+	}
+
+	if ( file != NULL ) {
+		char line [lineSize];
+		while (fgets ( line, sizeof line, file ) != NULL && lineNumber < numberLines ) { // copy the file into the array
+			memset(fileData[lineNumber], 0x00, lineSize);
+			strcpy(fileData[lineNumber], line);
+			lineNumber++;
+		}
+
+		if (strcmp(filename, "stdin") != 0) {
+			fclose ( file );
+		}
+		upload(handle, fileData, blank, id, totalDevices, true); // actually upload it
+	} else {
+		printf("%s did not open.\r\n", filename );
+	}
+}
+
+void download(hid_device *handle, char *filename, bool blank) {
+	int lineSize = 100 + (27 * MAX_DEVICES) ; // 27 characters per color set for however many devices (for uploading)
+	int numberLines = 1024;
+
+	char* fileData[numberLines];
+	int i, lineNumber = 0;
+
+	for (i=0; i<numberLines; i++) {
+		fileData[i]=new char[lineSize];
+	}
+
+	int length=strlen(filename);
+	char* extension = new char[7];
+	memset(extension,0x00,7);
+
+
+	FILE *file;
+
+	if (strcmp(filename, "stdout") != 0) {
+		if (length > 6) {
+			for (i=(length - 6); i < length; i++) {
+				extension[i-(length-6)] = filename[i];
+			}
+		}
+		if (strcmp(extension, ".ptSeq") == 0) {
+			// the filename ended in a .ptSeq, just use it
+			file = fopen(filename,"w+");
+		} else {
+			// append the .ptSeq extension
+			file = fopen(strcat(filename, ".ptSeq"),"w+");
+		}
+	} else {
+		file = stdout;
+	}
+	download(handle, fileData, lineSize, numberLines, blank);
+	while (fileData[lineNumber] != 0x00 && lineNumber < numberLines) {
+		fprintf(file, "%s", fileData[lineNumber]);
+		lineNumber++;
+	}
+	if (strcmp(filename, "stdout") != 0) {
+		fclose ( file );
+	}
 }

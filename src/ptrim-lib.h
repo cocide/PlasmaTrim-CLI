@@ -1,5 +1,5 @@
 /*******************************************************
-PlasmaTrim communication stuffs v0.2.1
+PlasmaTrim HID communication stuffs v0.2.2
 Andrew Toy
 Started: Oct 23 2012
 
@@ -9,7 +9,7 @@ Credit where credit is due:
 	Glohawk: http:// www.thephotonfactory.com/forum/viewtopic.php?f=5&t=104#p168
 		Filled in the gaps in the HID code table.
 
-Anyone may use, modify, distribute, and code from this work. Just make a footnote in some comment and all is good.
+This code may be used under the GPLv3 license
 ********************************************************/
 
 #include <stdio.h>
@@ -57,8 +57,8 @@ unsigned char *makeColor(char *color, bool full_length); // turn an ASCII string
                                                          // depending on what function you are calling you might need 1 or 2 hex values per LED, full_length = true is 2 hex values per LED
 void setColor(hid_device *handle, unsigned char *color, unsigned char brightness); // temporarly set the color of a device using a full length color string
 
-void download(hid_device *handle, char *filename, bool blank); // download data from the device to the filename, 'stdio' as the filename makes it stream to standard out
-void upload(hid_device *handle, char *filename, bool blank, unsigned char id, unsigned char totalDevices); // upload a file to the device, 'stdin' makes it use standard in, the colors used in this format are not full length
+void download(hid_device *handle, char** fileData, int lineSize, int numberLines, bool blank); // download data from the device and put it in fileData which has numberLines lines that are lineSize long
+int upload(hid_device *handle, char** fileData, bool blank, unsigned char id, unsigned char totalDevices, bool warn); // upload the data from a file to a device, the colors used in this format are not full length. warn=true makes it send notices to stderr. returns 0 on success -1 on failure
 void streamData(hid_device *handle, char *filename, unsigned char brightness, unsigned char id, unsigned char totalDevices); // play a sequence on the device. you can not currently use standard in because the threadding process requires the file to be read once per PlasmaTrim
 
 unsigned char getActiveSlots(hid_device *handle); // return the decimal value for the active slots on a device (1-76)

@@ -72,7 +72,7 @@ char *getName(hid_device *handle) {
 
 void setName(hid_device *handle, char *name) {
 	unsigned int length=strlen(name);
-	unsigned char i, cmd[32];
+	unsigned char i, cmd[32], offset=0;
 
 	memset(cmd,0x00,32);
 	cmd[0] = 0x08;
@@ -83,7 +83,12 @@ void setName(hid_device *handle, char *name) {
 	}
 
 	for (i=0; i<length; i++) {
-		cmd[i+1] = name[i];
+		if (name[i] >= 0x20) { // skip over non printiable characters
+			cmd[i+1-offset] = name[i];
+		} else {
+			offset++;
+		}
+
 	}
 
 	hid_write(handle, cmd, 32);
@@ -340,40 +345,32 @@ void setColor(hid_device *handle, unsigned char *color, unsigned char brightness
 	readData(handle);
 }
 
-void download(hid_device *handle, char *filename, bool blank) {
+void download(hid_device *handle, char** fileData, int lineSize, int numberLines, bool blank) {
 	// grab the sequence from the device
-	unsigned char i, j, slotsToGet = 76, hold, fade;
+	int i, j, slotsToGet = 76, hold, fade;
 	unsigned char activeSlots=getActiveSlots(handle);
-	int length=strlen(filename);
-	char* extension = new char[7];
-	memset(extension,0x00,7);
 
 	unsigned char cmd[32];
 	char res = 0;
 
+	int lineNumber = 0;
+
 	if (blank) {
 		slotsToGet = activeSlots;
 	}
-
-	FILE *file;
-
-	if (strcmp(filename, "stdout") != 0) {
-		if (length > 6) {
-			for (i=(length - 6); i < length; i++) {
-				extension[i-(length-6)] = filename[i];
-			}
-		}
-		if (strcmp(extension, ".ptSeq") == 0) {
-			// the filename ended in a .ptSeq, just use it
-			file = fopen(filename,"w+");
-		} else {
-			// append the .ptSeq extension
-			file = fopen(strcat(filename, ".ptSeq"),"w+");
-		}
-	} else {
-		file = stdout;
+	for (i=0; i < numberLines; i++) {
+		memset(fileData[i], 0x00, lineSize);
 	}
-	fprintf(file,"PlasmaTrim RGB-8 Sequence\r\nVersion: Simple Sequence Format\r\nActive Slots: %02d\r\n", activeSlots);
+
+
+	char* tempSpace[14];
+	for (i=0; i<14; i++) {
+		tempSpace[i]=new char[lineSize];
+	}
+
+	snprintf(fileData[0], numberLines,"PlasmaTrim RGB-8 Sequence\r\n");
+	snprintf(fileData[1], numberLines,"Version: Simple Sequence Format\r\n");
+	snprintf(fileData[2], numberLines,"Active Slots: %02d\r\n", activeSlots);
 
 
 	for (i=0; i < slotsToGet; i++) {
@@ -400,23 +397,28 @@ void download(hid_device *handle, char *filename, bool blank) {
 			fade+= 7;
 		}
 
-		fprintf(file, "slot %02d %c %c - ", i, hold, fade);
+		snprintf(tempSpace[0], numberLines, "slot %02d %c %c - ", i, hold, fade);
 		for (j=0; j<12; j++) {
-			fprintf(file, "%02X", cmd[j+2] );
+			snprintf(tempSpace[j+1], numberLines, "%02X", cmd[j+2] );
 		}
-		fprintf(file, "\r\n");
+		snprintf(tempSpace[13], numberLines, "\r\n");
+		strcpy(fileData[lineNumber+3], tempSpace[0]);
+		for (j=0; j<13; j++) {
+			strcat(fileData[lineNumber+3], tempSpace[j+1]);
+		}
+		lineNumber++;
 	} for (i=slotsToGet; i < 76; i++) {
-		fprintf(file, "slot %02d 0 0 - 000000000000000000000000\r\n", i);
+		snprintf(fileData[lineNumber+3], numberLines, "slot %02d 0 0 - 000000000000000000000000\r\n", i);
+		lineNumber++;
 	}
-	fprintf(file, "\r\n");
-	if (strcmp(filename, "stdout") != 0) {
-		fclose(file);
-	}
+	snprintf(fileData[lineNumber+3], numberLines, "\r\n");
+
 }
 
 
-void upload(hid_device *handle, char *filename, bool blank, unsigned char id, unsigned char totalDevices) {
-	// program a device
+//void upload(hid_device *handle, char** fileData, bool blank, unsigned char id, unsigned char totalDevices) {
+//}
+int upload(hid_device *handle, char** fileData, bool blank, unsigned char id, unsigned char totalDevices, bool warn) {
 	unsigned char i, lineNumber = 0, activeSlots, slotsToLoad = 76, activeDevices = 0, deviceNum = 1, loopStart = 0, offset = 0;
 	bool knownType = true, multiDevice = false;
 	unsigned char *rawColor;
@@ -425,102 +427,100 @@ void upload(hid_device *handle, char *filename, bool blank, unsigned char id, un
 
 	char* color = new char[25];
 
-	FILE *file;
-	if (strcmp(filename, "stdin") != 0) {
-		file = fopen ( filename, "r" );
-	} else {
-		file = stdin;
-	}
-	if ( file != NULL ) {
 
+	stop(handle);
 
-		stop(handle);
+	memset(color,0x00,25);
+	memset(color,'0',3);
+	setColor(handle, makeColor(color, true), 1); // set it to black because were nice
 
-		memset(color,0x00,25);
-		memset(color,'0',3);
-		setColor(handle, makeColor(color, true), 1); // set it to black because were nice
-
-		char line [ 560 ]; // 553 = 20 devices max on a line for this read
-		while ( knownType && fgets ( line, sizeof line, file ) != NULL ) {
-			lineNumber++;
-			if (lineNumber == 2) {
-				if (!( strcmp (line, "Version: Simple Sequence Format\r\n") == 0 || strcmp (line, "Version: Multiple Sequence Format\r\n") == 0)) {
-					knownType = false;
+	while ( knownType && fileData[lineNumber][0] != 0x0D && fileData[lineNumber][0] != 0x0A && fileData[lineNumber][0] != 0x00) { // we know the file type and it is not the last line
+		if (lineNumber == 1) {
+			if (!( strcmp (fileData[lineNumber], "Version: Simple Sequence Format\r\n") == 0 || strcmp (fileData[lineNumber], "Version: Multiple Sequence Format\r\n") == 0 ||  strcmp (fileData[lineNumber], "Version: Simple Sequence Format") == 0 || strcmp (fileData[lineNumber], "Version: Multiple Sequence Format") == 0) ) {
+				knownType = false;
+				if (warn) {
 					fprintf(stderr, "Unknown file format.\r\n");
-					return;
-				} else if (strcmp (line, "Version: Multiple Sequence Format\r\n") == 0) {
-					multiDevice = true;
 				}
-			} else if ( lineNumber == 3 ) {
-				if (multiDevice) {
-					activeDevices =  ((line[35] - 48) * 10) + line[36] - 48;
-					deviceNum = id + 1;
-					while (deviceNum > activeDevices) {
-						deviceNum-=activeDevices;
-					}
-					loopStart =  (((line[52] - 48) * 10) + line[53] - 48) -1;
-					i = 80;
-					while (line[i] > 47 && line[i] < 58) {
-						activeSlots*=10;
-						activeSlots+=line[i] - 48;
-						i++;
-					}
-				} else {
-					activeSlots = ((line[14] - 48) * 10) + line[15] - 48;
+				return -1;
+			} else if (strcmp (fileData[lineNumber], "Version: Multiple Sequence Format\r\n") == 0 || strcmp (fileData[lineNumber], "Version: Multiple Sequence Format") == 0) {
+				multiDevice = true;
+			}
+		} else if ( lineNumber == 2 ) {
+			if (multiDevice) {
+				activeDevices =  ((fileData[lineNumber][35] - 48) * 10) + fileData[lineNumber][36] - 48;
+				deviceNum = id + 1;
+				while (deviceNum > activeDevices) {
+					deviceNum-=activeDevices;
 				}
-				if (blank && (activeSlots-loopStart) < 76) {
-					// dont bother blanking out the slots
-					slotsToLoad = activeSlots-loopStart;
+				loopStart =  (((fileData[lineNumber][52] - 48) * 10) + fileData[lineNumber][53] - 48) -1;
+				i = 80;
+				while (fileData[lineNumber][i] > 47 && fileData[lineNumber][i] < 58) {
+					activeSlots*=10;
+					activeSlots+=fileData[lineNumber][i] - 48;
+					i++;
 				}
-				if (((activeSlots-loopStart) > 76) && id == 0) {
-					// we had more than 76 slots
+			} else {
+				activeSlots = ((fileData[lineNumber][14] - 48) * 10) + fileData[lineNumber][15] - 48;
+			}
+			if (blank && (activeSlots-loopStart) < 76) {
+				// dont bother blanking out the slots
+				slotsToLoad = activeSlots-loopStart;
+			}
+			if (((activeSlots-loopStart) > 76) && id == 0) {
+				// we had more than 76 slots
+				if (warn) {
 					fprintf(stderr, "Notice: More than 76 looping slots are in the sequence, %d are being ignored.\r\n", (activeSlots-loopStart)-76);
 				}
+			}
 
 
-				if (activeDevices == 0) {
-					activeDevices++;
-				}
-				if (id == activeDevices) {
-					// this is one device past the number of actiev devices, notify them of wrapping
+			if (activeDevices == 0) {
+				activeDevices++;
+			}
+			if (id == activeDevices) {
+				// this is one device past the number of actiev devices, notify them of wrapping
+				if (warn) {
 					fprintf(stderr, "Notice: This sequence is only written for %d PlasmaTrims, you have %d selected.\r\n", activeDevices, totalDevices);
 					fprintf(stderr, "        The remaining devices will be treated as repeats.\r\n");
-				} else if (activeDevices > totalDevices && id == (totalDevices -1)) {
-					// we have more sequence availabe, tell them
+				}
+			} else if (activeDevices > totalDevices && id == (totalDevices -1)) {
+				// we have more sequence availabe, tell them
+				if (warn) {
 					fprintf(stderr, "Notice: This sequence can utilize %d PlasmaTrims, you only have %d selected.\r\n", activeDevices, totalDevices);
 				}
-
-			} else if ( lineNumber > (3+loopStart) && lineNumber < 4+slotsToLoad+loopStart) {
-
-				if (lineNumber == 104) {
-					offset = 1; // once we hit slot 100 we need to account for the extra digit in the slot #
-				}
-				memset(color,0x00,25);
-				memset(cmd,0x00,32);
-				cmd[0] = 0x06;
-				cmd[1] = lineNumber - 4 - loopStart;
-				for (i=14; i<38; i++) {
-					color[i-14] = line[i+(27*(deviceNum-1))+offset];
-				}
-				rawColor = makeColor(color, false);
-				for (i=0; i<12; i++) {
-					cmd[i+2] = rawColor[i];
-				}
-				cmd[14] = ((line[8+offset] - 0x30) << 4) + line[10+offset] - 0x30;
-
-				hid_write(handle, cmd, 32);
-				readData(handle);
-
 			}
+
+		} else if ( lineNumber > (2+loopStart) && lineNumber < 3+slotsToLoad+loopStart) {
+
+			if (lineNumber == 103) {
+				offset = 1; // once we hit slot 100 we need to account for the extra digit in the slot #
+			}
+			memset(color,0x00,25);
+			memset(cmd,0x00,32);
+			cmd[0] = 0x06;
+			cmd[1] = lineNumber - 3 - loopStart;
+			for (i=14; i<38; i++) {
+				color[i-14] = fileData[lineNumber][i+(27*(deviceNum-1))+offset];
+			}
+			rawColor = makeColor(color, false);
+			for (i=0; i<12; i++) {
+				cmd[i+2] = rawColor[i];
+			}
+			cmd[14] = ((fileData[lineNumber][8+offset] - 0x30) << 4) + fileData[lineNumber][10+offset] - 0x30;
+
+			hid_write(handle, cmd, 32);
+			readData(handle);
+
 		}
-		if (strcmp(filename, "stdin") != 0) {
-			fclose ( file );
-		}
-		setActiveSlots(handle, slotsToLoad);
-		start(handle);
-	} else {
-		printf("%s did not open.\r\n", filename );
+		lineNumber++;
+
 	}
+	setActiveSlots(handle, activeSlots-loopStart);
+	start(handle);
+
+	return 0;
+
+
 }
 
 void streamData(hid_device *handle, char *filename, unsigned char brightness, unsigned char id, unsigned char totalDevices) {
