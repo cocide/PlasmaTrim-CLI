@@ -413,7 +413,7 @@ void runCommand(char** commands, int output) {
 	}
 
 	if (deviceIdNum[0] < 0) {
-		send (output, "[Device not found]\r\n", 20, 0); //MSG_MORE);
+		send (output, "[device not found]\r\n", 20, 0); //MSG_MORE);
 		return;
 	}
 	pthread_t thread[selectedDevices];
@@ -633,7 +633,7 @@ void *runThread(void *arguments) {
 	} else {
 		send (instance -> output, "[", 1, 0); //MSG_MORE);
 		send (instance -> output, serial[instance -> handleID], 10, 0); //MSG_MORE);
-		send (instance -> output, " premission denied]\r\n", 21, 0);
+		send (instance -> output, " permission denied]\r\n", 21, 0);
 		send (instance -> output, 0x00, 1, MSG_EOR);
 
 	}

@@ -135,7 +135,7 @@ the server will automatically disconnect clients after 5 min of inactivity. to k
 
 general command errors:
 	[serial permission denied]
-	[unknown command]
+	[unknown command (first arg of command)]
 	[device not found]
 
 commands and results/errors:
