@@ -159,8 +159,8 @@ void *monitorDevices(void *arguements) {
 					for (j=0; j < MAX_CLIENTS; j++) {
 						if (socket_id[j] > 0) {
 							send (socket_id[j], "[removed ", 9, 0); //MSG_MORE);
-							deviceInfo( socket_id[j], i);
-							send (socket_id[j], " ]\r\n", 4, 0);
+							send (socket_id[j], serial[i], 8, 0);
+							send (socket_id[j], "]\r\n", 3, 0);
 							send (socket_id[j], 0x00, 1, MSG_EOR);
 						}
 					}
