@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 			handle[number_devices] = hid_open_path(cur_dev->path);
 			if (handle[number_devices]) {
 				// Set the hid_read() function to be non-blocking.
-				start_comm(handle[number_devices]);;
+				getSerial(handle[number_devices]);;
 
 				showInfo(handle[number_devices]);
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
 				handle[number_devices] = hid_open_path(cur_dev->path);
 				if (handle[number_devices]) {
 					// Set the hid_read() function to be non-blocking.
-					start_comm(handle[number_devices]);;
+					getSerial(handle[number_devices]);;
 					number_devices++;
 				}
 				cur_dev = cur_dev->next;
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
 							handle[number_devices] = hid_open_path(cur_dev->path);
 							if (handle[number_devices]) {
 								// Set the hid_read() function to be non-blocking.
-								start_comm(handle[number_devices]);;
+								getSerial(handle[number_devices]);;
 
 								if (strcmp(device, getSerial(handle[number_devices])) == 0) {
 									found = true;
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
 					fprintf(stderr, "Could not open device at %s\r\n", path_list[i]);
 				} else {
 					number_devices++;
-					start_comm(handle[number_devices]);
+					getSerial(handle[number_devices]);
 				}
 			}
 		} else {
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 				handle[number_devices] = hid_open_path(cur_dev->path);
 				if (handle[number_devices]) {
 					// Set the hid_read() function to be non-blocking.
-					start_comm(handle[number_devices]);;
+					getSerial(handle[number_devices]);;
 
 					if (strcmp(argv[1], getSerial(handle[number_devices])) == 0) {
 						found = true;

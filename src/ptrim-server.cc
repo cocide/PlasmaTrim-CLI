@@ -183,7 +183,7 @@ void *monitorDevices(void *arguements) {
 						//this device is new, so open it
 						handle[i] = hid_open_path(currentDevices[j]);
 							if (handle[i]) {
-								start_comm(handle[i]);;
+								getSerial(handle[i]);;
 
 								strcpy(openDevices[i], currentDevices[j]);
 								memset(currentDevices[j],0x00,32);
