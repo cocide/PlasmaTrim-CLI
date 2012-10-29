@@ -34,6 +34,9 @@ This code may be used under the GPLv3 license
 
 #define MAX_DEVICES 32
 
+#if __cplusplus
+extern "C" {
+#endif
 
 void showInfo(hid_device *handle);
 
@@ -70,3 +73,7 @@ void hold(char *holdTime); // hold for some time (0-F), same numbering as the se
 void readData(hid_device *handle); // just used to get the data off the buffer
 void delay(unsigned int ms); // usleep, but multi platform
 void start_comm(hid_device *handle); // start up the hid stuff and read the first chunk of data to remove any un-read data from the buffer just to make sure we are good to go
+
+#if __cplusplus
+}
+#endif
