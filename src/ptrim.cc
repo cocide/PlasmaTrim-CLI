@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 		}
 	} else {
 		// we got some args, so figure out what the hell is going on
-		if (strcmp(argv[1], "help") == 0) {
+		if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-help") == 0 || strcmp(argv[1], "-h") == 0) {
 			// derp, thats easy
 			help();
 			return 0;
