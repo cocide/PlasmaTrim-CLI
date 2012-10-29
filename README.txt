@@ -6,6 +6,8 @@ Running each command w/o options will print its help file.
 
 including the ptrim-lib.h and hidapi.h will allow you to use these functions with your software, however you will need to handle all the hidapi connections.
 
+Anyone may use this under the GPLv3 license.
+
 
 Things that Need to Eventually Happen
 =====================================
