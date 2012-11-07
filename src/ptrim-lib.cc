@@ -828,9 +828,16 @@ void start_comm(hid_device *handle) {
 }
 
 void format_print(int tab, char *string) {
-	struct winsize w;
-	ioctl(0, TIOCGWINSZ, &w);
-	int i, stop, offset = 0, width = (w.ws_col-(tab*3));
+
+// Headers needed for sleeping.
+	#ifdef WIN32
+		int width=80;
+	#else
+		struct winsize w;
+		ioctl(0, TIOCGWINSZ, &w);
+		int width = (w.ws_col-(tab*3));
+	#endif
+	int i, stop, offset = 0;
 	int len = strlen(string);
 
 	if (len == 0) {

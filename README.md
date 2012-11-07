@@ -1,7 +1,8 @@
 PlasmaTrim-CLI
 ==============
 ###Basic CLI applications which utilize the PlasmaTrim library  
-Simply run make from the root directory to compile.  
+Simply run `make` from the root directory to compile then optionally run `sudo make install`.  
+On a Windows system compile with MinGW and GNU make.
 Including the ptrim-lib.h and hidapi.h will allow you to use these functions with your software, however you will need to handle all the hidapi connections.  
 Anyone may use this under the GPLv3 license.  
   
@@ -18,6 +19,7 @@ Things that Need to Eventually Happen
     * Currently this is rather rough, it seems that usleep is not all that accurate. Anyone got any ideas?
 * Windows
     * Eventually this needs to happen. The network server will probably never be ported. The library and standalone utility were written with this comparability in mind.
+    * Currently ptrim.exe will compile, however the hidapi does not successfully write so the exe hangs. Compiling is with MinGW and GNU make.
   
   
 The Log of Change

@@ -28,13 +28,6 @@ This code may be used under the GPLv3 license
 	#include <pthread.h>
 #endif
 
-
-#ifdef WIN32
-	UNREFERENCED_PARAMETER(argc);
-	UNREFERENCED_PARAMETER(argv);
-#endif
-
-
 struct arg_struct {
 	int argc;
 	char** argv;

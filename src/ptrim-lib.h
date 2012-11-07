@@ -16,7 +16,6 @@ This code may be used under the GPLv3 license
 #include <wchar.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
 #include "../hidapi/hidapi.h"
 
 
@@ -25,12 +24,7 @@ This code may be used under the GPLv3 license
 	#include <windows.h>
 #else
 	#include <unistd.h>
-#endif
-
-
-#ifdef WIN32
-	UNREFERENCED_PARAMETER(argc);
-	UNREFERENCED_PARAMETER(argv);
+	#include <sys/ioctl.h>
 #endif
 
 #define MAX_DEVICES 32

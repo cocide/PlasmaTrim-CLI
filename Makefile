@@ -4,36 +4,45 @@ CFLAGS       += -Wall -g
 CXX          ?= g++
 CXXFLAGS     += -Wall -g
 
+COBJS         = hid.o
 CCOBJS        = ptrim-lib.o
 
 LIBS          = -l curses
 INCLUDES     += -I hidapi/ -I src/
 
 UNAME        := $(shell uname)
+ifeq ($(UNAME), )
+	UNAME     = Win
+endif
+
+ALL           = ptrim ptrim-server ptrim-client
 
 ifeq ($(UNAME), Linux)
-	COBJS     = hid-libusb.o
 	LIBS     += `pkg-config libusb-1.0 libudev --libs`
-	INCLUDES += -I hidapi/linux/ `pkg-config libusb-1.0 --cflags`
+	INCLUDES += `pkg-config libusb-1.0 --cflags`
 	OS        = linux
 endif
 ifeq ($(UNAME), Darwin)
-	COBJS     = hid.o
 	LIBS     += -framework IOKit -framework CoreFoundation
-	INCLUDES += -I hidapi/mac/
 	OS        = mac
 endif
+ifeq ($(UNAME), Win)
+	LIBS      = -lsetupapi
+	OS        = windows
+	ALL       = ptrim
+endif
 
-ROOT_TEST     = if test `whoami` != "root"; then echo "You need to be root to install, try using \`sudo make install\`" >&2; exit 1; fi
+
+INCLUDES     += -I hidapi/$(OS)/
+
+ROOT_TEST     = if test `whoami` != "root"; then echo "You need to be root to install, try using sudo" >&2; exit 1; fi
 MAN1_PAGES    = man/man1/ptrim.1.bz2 man/man1/ptrim-server.1.bz2 man/man1/ptrim-client.1.bz2
 MAN_PAGES     = $(MAN1_PAGES)
 
 VERSION       = 0.3.1
-DIRECTORY = PlasmaTrim_CLI-$(OS)-v$(VERSION)
+DIRECTORY     = PlasmaTrim_CLI-$(OS)-v$(VERSION)
 
-
-
-all: ptrim ptrim-server ptrim-client
+all: $(ALL)
 
 install: all man
 	$(ROOT_TEST)
@@ -67,10 +76,7 @@ man: $(MAN_PAGES)
 man/%.bz2: man/%
 	bzip2 -kf $?
 
-hid.o: hidapi/mac/hid.c
-	$(CC) $(CFLAGS) -c $(INCLUDES) $< -o $@
-
-hid-libusb.o: hidapi/linux/hid-libusb.c
+hid.o: hidapi/$(OS)/hid.c
 	$(CC) $(CFLAGS) -c $(INCLUDES) $< -o $@
 
 %.o: src/%.cc src/*.h

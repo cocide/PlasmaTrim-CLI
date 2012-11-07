@@ -5,6 +5,7 @@
 ptrim
 ptrim-client
 ptrim-server
+ptrim.exe
 
 # Install zip
 PlasmaTrim_CLI-*
