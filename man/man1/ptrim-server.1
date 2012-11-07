@@ -1,0 +1,26 @@
+.TH PTRIM 1 "NOVEMBER 2012" ptrim-utils\ v0.3.1 "User Manuals"
+.SH NAME
+ptrim-server \- start the ptrim network server
+.SH SYNOPSIS
+.B ptrim-server --help
+.br
+.B ptrim-server --version
+.br
+.B ptrim-server [port] <security-code>
+.br
+.SH DESCRIPTION
+.B ptrim-server
+will start a ptrim shell server on \fBport\fR which requires \fBsecurity-code\fR
+.SH OPTIONS
+.TP
+\fBport\fR
+.br
+The TCP port to listen on, default 26163
+.TP
+\fBsecurity-code\fR
+The security code that a client must have to connect. Much like a pin or password. Special characters must be escaped.
+.SH AUTHOR
+Andrew Toy <andy at cocide dot com>
+.SH "SEE ALSO"
+.BR ptrim (1),
+.BR ptrim-client (1)

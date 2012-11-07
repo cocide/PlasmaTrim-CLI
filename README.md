@@ -10,7 +10,7 @@ Things that Need to Eventually Happen
 -------------------------------------
 * Network support
     * I really want it to support some form of mDNS autodiscovery, the idea being that any application which supports this protocol will just 'find' the PlasmaTrims automatically
-    * Needs better consistancy and reliabilty on the server side
+    * Needs better consistency and reliability on the server side
 * On the fly control of multiple units
     * Not sure how well this is working currently, time for others to test.
     * Currently this only works with non-network mode. I need to re-work how it syncs between the devices to allow it to be useful as a library function
@@ -22,6 +22,12 @@ Things that Need to Eventually Happen
   
 The Log of Change
 -----------------
+* Documentation is a must - Nov 7 2012 - v0.3.1
+    * Added man pages
+    * Added make install
+    * Added make install-zip which creates the zip to distribute including install.sh
+    * Fixed really poor state of documentation (my bad, I didn't realize it was that horrible)
+    * Combined all the version info into ptrim-lib.c, the header files, and the man pages.
 * Got network? - Oct 28 2012 - v0.3.0
     * Made general improvements to the portability of ptrim-lib
     * Added a network client/server set which uses AF_INET SOCKET_STREAM
@@ -44,6 +50,6 @@ The Log of Change
     * Shortened the code by moving common things into functions
     * Running with only a serial or path now prints the devices info
     * Let fade actually control the brightness based on user input or the saved brightness (oops, my bad, though I already did that)
-    * Shrank some variable sizes by meaningless amounts to make the program run unnoticeably lighter
+    * Shrank some variable sizes by meaningless amounts to make the program run unnoticeable lighter
 * The beginning - Oct 23 2012 - v0.1.0
     * Moved the project from bash. It supports all HID commands and fading to new colors.

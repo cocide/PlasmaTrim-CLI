@@ -1,5 +1,5 @@
 /*******************************************************
-PlasmaTrim Network client v0.1.0
+PlasmaTrim Network client v0.1.1
 Andrew Toy
 Started: Oct 25 2012
 
@@ -20,6 +20,7 @@ This code may be used under the GPLv3 license
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
+#include "ptrim-lib.h"
 
 #define DEFAULT_PORT 26163
 

@@ -8,7 +8,16 @@ int main(int argc, char* argv[]) {
 	struct sockaddr_in serv_addr, cli_addr;
 	code = new char [255];
 
-	if ( argc < 2) {
+	if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
+		// derp, thats easy
+		ptrim_lib_version();
+		ptrim_server_version();
+		return 0;
+	} else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
+		// derp, thats easy
+		help();
+		return 0;
+	} else if ( argc < 2) {
 		help();
 		return 1;
 	} else if (argc == 2) {
@@ -237,10 +246,24 @@ void *monitorDevices(void *arguements) {
 
 
 void help() {
-	printf("PlsamaTrim Utilities by Cocide v0.3.0 - Oct 28 2012\r\n");
-	printf("Codename: \"Got network?\"\r\n");
-	printf("ptrim-lib v0.2.2, ptrim-server v0.1.0\r\n");
-	printf("Usage: ptrim-server [port] (security code)\r\n");
+	ptrim_lib_version();
+	ptrim_server_version();
+	format_print(0, "");
+	format_print(0, "SYNOPSIS");
+	format_print(1, "ptrim-server --help");
+	format_print(1, "ptrim-server --version");
+	format_print(1, "ptrim-server [port] <security-code>");
+	format_print(0, "");
+	format_print(0, "DESCRIPTION");
+	format_print(1, "ptrim-server will start a ptrim shell server on port which requires security-code");
+	format_print(0, "");
+	format_print(0, "OPTIONS");
+	format_print(1, "port");
+	format_print(2, "The TCP port to listen on, default 26163");
+	format_print(0, "");
+	format_print(1, "security-code");
+	format_print(2, "The security code that a client must have to connect. Much like a pin or password. Special characters must be escaped.");
+
 }
 
 void clientWelcome( int fd ) {

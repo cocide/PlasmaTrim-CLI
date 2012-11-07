@@ -1,5 +1,5 @@
 /*******************************************************
-PlasmaTrim Network goodness v0.1.0
+PlasmaTrim Network goodness v0.1.1
 Andrew Toy
 Started: Oct 25 2012
 

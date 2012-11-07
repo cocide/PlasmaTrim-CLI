@@ -5,3 +5,9 @@
 ptrim
 ptrim-client
 ptrim-server
+
+# Install zip
+PlasmaTrim_CLI-*
+
+# Compressed man pages
+man/man*/*bz2

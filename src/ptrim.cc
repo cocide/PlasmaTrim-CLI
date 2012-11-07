@@ -32,7 +32,12 @@ int main(int argc, char* argv[]) {
 		}
 	} else {
 		// we got some args, so figure out what the hell is going on
-		if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-help") == 0 || strcmp(argv[1], "-h") == 0) {
+		if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
+			// derp, thats easy
+			ptrim_lib_version();
+			ptrim_version();
+			return 0;
+		} else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
 			// derp, thats easy
 			help();
 			return 0;
@@ -170,7 +175,7 @@ int main(int argc, char* argv[]) {
 			return 1;
 		}
 
-		if (argc > 2 && (strcmp(argv[2], "info") != 0 && strcmp(argv[2], "download") != 0 && strcmp(argv[2], "full_download") != 0)) {
+		if (argc > 2 && (strcmp(argv[2], "download") != 0 && strcmp(argv[2], "full_download") != 0)) {
 			// standard/simple commands that can just be theraded (not that they need to if its only one device, but we already have multidevice communication set up so we might as well)
 			// things that have multiline output should not really go here
 			for (i=0; i < number_devices; i++) {
@@ -198,7 +203,6 @@ int main(int argc, char* argv[]) {
 	}
 
 	hid_exit();
-
 	return 0;
 }
 
@@ -209,11 +213,7 @@ void *runCommand(void *arguments) {
 	if (args -> argc == 2) {
 		showInfo(args -> handle);
 	} else if (args -> argc > 2) {
-		if (strcmp(args -> argv[2], "info") == 0) {
-			showInfo(args -> handle);
-		} else if (strcmp(args -> argv[2], "serial") == 0) {
-			printf("%s\r\n", getSerial(args -> handle));
-		} else if (strcmp(args -> argv[2], "name") == 0) {
+		if (strcmp(args -> argv[2], "name") == 0) {
 			if (args -> argc > 3) {
 				setName(args -> handle, args -> argv[3]);
 			} else {
@@ -282,73 +282,123 @@ void *runCommand(void *arguments) {
 	hid_close(args -> handle);
 	return NULL;
 }
-
-
 void help() {
-	printf("PlsamaTrim Utilities by Cocide v0.3.0 - Oct 28 2012\r\n");
-	printf("Codename: \"Got network?\"\r\n");
-	printf("ptrim-lib v0.2.2, ptrim v0.2.2\r\n");
-	printf("\r\n");
-	printf("Some help for you:\r\n");
-	printf("When calling multiple devices you must have the serials space separated and wrapped in quotes\r\n");
-	printf("	ie \"00B12345 00B12346\" will work\r\n");
-	printf("	the keywork 'all' can also be used to call all devices\r\n");
-	printf("\r\n");
-	printf("Usage:\r\n");
-	printf("	ptrim-client host pin commands\r\n");
-	printf("	ptrim-client host port pin commands\r\n");
-	printf("\r\n");
-	printf("Command Overview:\r\n");
-	printf("\r\n");
-	printf("	list the PlasmaTrims that are hooked up to the system.\r\n");
-	printf("serial info\r\n");
-	printf("	print generic information about the device(s) with the serial (basically the same as calling it w/o arguments)\r\n");
-	printf("serial serial\r\n");
-	printf("	print the serial number (rather pointless if you use serial numbers to call the script)\r\n");
-	printf("serial name [new name]\r\n");
-	printf("	print the devices name or set it if a new name is give\r\n");
-	printf("	*NOTE* this will write to the non-volatile memory when you set the name, do not run this hundreds of thousands of times\r\n");
-	printf("\r\n");
-	printf("serial brightness [new brightness]\r\n");
-	printf("	print or set the brightness\r\n");
-	printf("	*NOTE* this will write to the non-volatile memory when you set the brightness, do not run this hundreds of thousands of times\r\n");
-	printf("\r\n");
-	printf("serial (start|stop)\r\n");
-	printf("	start or stop the sequence loaded to the device\r\n");
-	printf("\r\n");
-	printf("serial color [new color] [temporary brightness]\r\n");
-	printf("	show or set the colors the PlasmaTrim is displaying\r\n");
-	printf("	if a brightness is not given it will use the saved brightness, which could be different than the current brightness\r\n");
-	printf("	the new color string must be wrapped in quotes if it has spaces.\r\n");
-	printf("	the color string can be 3 or 6 characters - which will set all the LEDs to the same color (ie: 'FFF' and 'FFFFFF' are the same)\r\n");
-	printf("		it can also be 8 sets of 3 or 6 characters - which will set every LED to a different color (ex: 'F00 0F0 00F....')\r\n");
-	printf("	the new brightness is NOT saved to non-volatile memory\r\n");
-	printf("\r\n");
-	printf("serial fade (new color) (fade time) [temporary brightness]\r\n");
-	printf("	fade the PlasmaTrim to the new color over some time, the time is an estimate and uses the same numbering as the windows application and ptSeq files.\r\n");
-	printf("		0 => instant, almost same as color \r\n");
-	printf("		1 => 1/10 sec; 2 => 1/4; 3 => 1/2; 4 => 1 sec; 5 => 2.5; 6 => 5; 7 => 10; 8 => 15; 9 => 30 sec\r\n");
-	printf("		a => 1 min; b => 2.5; c => 5; d => 10; e => 15; f => 30 min\r\n");
-	printf("\r\n");
-	printf("serial download [filename]\r\n");
-	printf("	get the currently programmed sequence from the device (it will stop at the last active element then report black with no hold or fade for the rest)\r\n");
-	printf("	if no file is give it will print to stdout\r\n");
-	printf("serial full_download [filename]\r\n");
-	printf("	same as download except it will not stop reading at the last active slot (useful if you have stored some unfinished work after the last element)\r\n");
-	printf("\r\n");
-	printf("serial upload [filename]\r\n");
-	printf("	program the PlasmaTrim with the sequence file, if no file is given it will use stdin (you can pipe sequence files to it)\r\n");
-	printf("	if no file is given it will not overwrite the slots after the last active element (makes uploads faster)\r\n");
-	printf("	*NOTE* this will write to the non-volatile memory, do not run this hundreds of thousands of times\r\n");
-	printf("serial full_upload [filename]\r\n");
-	printf("	same as upload except it will not stop writing at the last active slot (useful if you would like to blackout the inactive elements, but it takes longer)\r\n");
-	printf("	*NOTE* this will write to the non-volatile memory, do not run this hundreds of thousands of times\r\n");
-	printf("\r\n");
-	printf("serial stream (filename) [temporary brightness]\r\n");
-	printf("	send the sequence in the file to the device(s) without overwriting the current programming, optionally at a brightness level\r\n");
-	printf("	this is slightly slower than if the sequence ran on the device from programming, and it keeps in sync by waiting for them all to finish (USB has some lag at times)\r\n");
-	printf("	but the differences in timing between multiple units are minimial, you will probably never notice them since the units will always start together\r\n");
-	printf("\r\n");
+	ptrim_lib_version();
+	ptrim_version();
+	format_print(0, "");
+	format_print(0, "SYNOPSIS");
+	format_print(1, "ptrim");
+	format_print(1, "ptrim --help");
+	format_print(1, "ptrim --version");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier>");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> start");
+	format_print(1, "ptrim <identifier> stop");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> name [new-name]");
+	format_print(1, "ptrim <identifier> brightness [new-brightness]");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> color [new-color [temp-brightness]]");
+	format_print(1, "ptrim <identifier> fade <new-color> <fade-time> [temp-brightness]");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> download [sequence-file]");
+	format_print(1, "ptrim <identifier> full_download [sequence-file]");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> upload [sequence-file]");
+	format_print(1, "ptrim <identifier> full_upload [sequence-file]");
+	format_print(1, "ptrim <identifier> stream <sequence-file> [temp-brightness]");
+	format_print(0, "");
+	format_print(0, "DESCRIPTION");
+	format_print(1, "Use ptrim to control, program, read from, and write to one or more PlasmaTrims");
+	format_print(0, "");
+	format_print(0, "USAGE");
+	format_print(1, "ptrim");
+	format_print(2, "List all connected PlasmaTrims and some basic information about them");
+	format_print(0, "");
+	format_print(1, "ptrim --help");
+	format_print(2, "Display the help document along with version information");
+	format_print(0, "");
+	format_print(1, "ptrim --version");
+	format_print(2, "Display the version number");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier>");
+	format_print(2, "Print the information about PlasmaTrim(s) at identifier");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> start");
+	format_print(2, "Start the last uploaded sequence on PlasmaTrim(s) at identifier");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> stop");
+	format_print(2, "Stop the last uploaded sequence on PlasmaTrim(s) at identifier");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> name [new-name]");
+	format_print(2, "Show the name of PlasmaTrim(s) at identifier and optionally save it as new-name");
+	format_print(2, "WARNING: Saving the name as a new value will write to non-volatile memory, do not run this hundreds of thousands of times!");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> brightness [new-brightness]");
+	format_print(2, "Show the brightness of PlasmaTrim(s) at identifier and optionally save it as new-brightness");
+	format_print(2, "WARNING: Saving the brightness as a new value will write to non-volatile memory, do not run this hundreds of thousands of times!");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> color [new-color [temp-brightness]]");
+	format_print(2, "Show the color(s) that PlasmaTrim(s) at identifier are displaying and optionally set it to new-color with either the saved brightness level or temp-brightness");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> fade <new-color> <fade-time> [temp-brightness]");
+	format_print(2, "Fade PlasmaTrim(s) at identifier to new-color over fade-time with either the saved brightness level or temp-brightness");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> download [sequence-file]");
+	format_print(2, "Download the current programmed sequence from PlasmaTrim(s) at identifier either to stdout or sequence-file.");
+	format_print(2, "Once the last active slot is reached report all remaining slots as black to speed up this process.");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> full_download [sequence-file]");
+	format_print(2, "Download the current programmed sequence from PlasmaTrim(s) at identifier either to stdout or sequence-file.");
+	format_print(2, "Do not stop at the last active slot, get all the data from the device.");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> upload [sequence-file]");
+	format_print(2, "Upload the sequence file sequence-file or stdin to PlasmaTrim(s) at identifier");
+	format_print(2, "Once the last active slot is reached stop uploading and do not black out unused slots to make the upload faster.");
+	format_print(2, "WARNING: Uploading sequences write to non-volatile memory, do not run this hundreds of thousands of times!");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> full_upload [sequence-file]");
+	format_print(2, "Upload the sequence file sequence-file or stdin to PlasmaTrim(s) at identifier");
+	format_print(2, "Once the last active slot is reached black out all unused slots at the cost of a longer upload time.");
+	format_print(2, "WARNING: Uploading sequences write to non-volatile memory, do not run this hundreds of thousands of times!");
+	format_print(0, "");
+	format_print(1, "ptrim <identifier> stream <sequence-file> [temp-brightness]");
+	format_print(2, "Stream the sequence file sequence-file to PlasmaTrim(s) at identifier either with the saved brightness or temp-brightness");
+	format_print(2, "The program will not exit until it is killed or ctrl-c is pressed.");
+	format_print(2, "This can be used to stream to multiple devices which will keep all devices synchronized.");
+	format_print(0, "");
+	format_print(0, "OPTIONS");
+	format_print(1, "identifier");
+	format_print(2, "The PlasmaTrim(s) to select. This can be a single serial number, multiple serial numbers, or the keyword \"all\". Examples:");
+	format_print(2, "00B12345");
+	format_print(2, "\"00B12345 00B12346\"");
+	format_print(2, "all");
+	format_print(0, "");
+	format_print(1, "new-name");
+	format_print(2, "The new name to save into the PlasmaTrim. All special characters must be escaped.");
+	format_print(0, "");
+	format_print(1, "new-brightness");
+	format_print(2, "The new brightness value to store in memory. This value will be remembered after a power cycle and should be between 1 and 100.");
+	format_print(0, "");
+	format_print(1, "temp-brightness");
+	format_print(2, "The temporary brightness value to be used for this command only. This value will not be remembered after a power cycle and should be between 1 and 100.");
+	format_print(0, "");
+	format_print(1, "new-color");
+	format_print(2, "A hex color code to use for this command. It can be in 3 or 6 digit format, either one color for every LED or one color for all the LEDs, upper or lower case, space separation is allowed if it is wrapped in quotes. Valid examples for setting every LED to red would be:");
+	format_print(2, "F00");
+	format_print(2, "FF0000");
+	format_print(2, "F00F00F00F00F00F00F00F00");
+	format_print(2, "\"F00 F00 F00 F00 F00 F00 F00 F00\"");
+	format_print(2, "FF0000FF0000FF0000FF0000FF0000FF0000FF0000FF0000");
+	format_print(2, "\"FF0000 FF0000 FF0000 FF0000 FF0000 FF0000 FF0000 FF0000\"");
+	format_print(0, "");
+	format_print(1, "fade-time");
+	format_print(2, "How much time to take while making a fade. A single hex character is used and it conforms to the same timing scheme as the sequence timing.");
+	format_print(0, "");
+	format_print(1, "sequence-file");
+	format_print(2, "The path to a .ptSeq file. Both Simple Sequence Format and Multiple Sequence Formats are accepted. If no file is given the for upload stdin will be used, if no file is given for download stdout will be use.");
+
 }
 
 void upload(hid_device *handle, char *filename, bool blank, unsigned char id, unsigned char totalDevices) {

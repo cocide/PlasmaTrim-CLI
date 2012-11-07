@@ -1,0 +1,150 @@
+.TH PTRIM 1 "NOVEMBER 2012" ptrim-utils\ v0.3.1 "User Manuals"
+.SH NAME
+ptrim-client \- control one or more PlasmaTrim devices
+.SH SYNOPSIS
+.B ptrim-client
+.br
+.B ptrim-client --help
+.br
+.B ptrim-client --version
+.br
+
+.B ptrim-client <host> [port] <security-code> <identifier> start
+.br
+.B ptrim-client <host> [port] <security-code> <identifier> stop
+.br
+
+.B ptrim-client <host> [port] <security-code> <identifier> name [new-name]
+.br
+.B ptrim-client <host> [port] <security-code> <identifier> brightness [new-brightness]
+.br
+
+.B ptrim-client <host> [port] <security-code> <identifier> color [new-color [temp-brightness]]
+.br
+.B ptrim-client <host> [port] <security-code> <identifier> fade <new-color> <fade-time> [temp-brightness]
+.br
+
+.B ptrim-client <host> [port] <security-code> <identifier> download [sequence-file]
+.br
+.B ptrim-client <host> [port] <security-code> <identifier> full_download [sequence-file]
+.br
+
+.B ptrim-client <host> [port] <security-code> <identifier> upload [sequence-file]
+.br
+.B ptrim-client <host> [port] <security-code> <identifier> full_upload [sequence-file]
+.br
+.SH DESCRIPTION
+Use
+.B ptrim
+to control, program, read from, and write to one or more PlasmaTrims
+.SH USAGE
+.TP
+\fBptrim-client --help\fR
+Display the help document along with version information
+.TP
+\fBptrim-client --version\fR
+Display the version number
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> start\fR
+Start the last uploaded sequence on PlasmaTrim(s) at \fBidentifier\fR
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> stop\fR
+Stop the last uploaded sequence on PlasmaTrim(s) at \fBidentifier\fR
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> name [new-name]\fR
+Show the name of PlasmaTrim(s) at \fBidentifier\fR and optionally save it as \fBnew-name\fR
+.br
+\fBWARNING:\fR Saving the name as a new value will write to non-volatile memory, do not run this hundreds of thousands of times!
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> brightness [new-brightness]\fR
+Show the brightness of PlasmaTrim(s) at \fBidentifier\fR and optionally save it as \fBnew-brightness\fR
+.br
+\fBWARNING:\fR Saving the brightness as a new value will write to non-volatile memory, do not run this hundreds of thousands of times!
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> color [new-color [temp-brightness]]\fR
+Show the color(s) that PlasmaTrim(s) at \fBidentifier\fR are displaying and optionally set it to \fBnew-color\fR with either the saved brightness level or \fBtemp-brightness\fR
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> fade <new-color> <fade-time> [temp-brightness]\fR
+Fade PlasmaTrim(s) at \fBidentifier\fR to \fBnew-color\fR over \fBfade-time\fR with either the saved brightness level or \fBtemp-brightness\fR
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> download [sequence-file]\fR
+Download the current programmed sequence from PlasmaTrim(s) at \fBidentifier\fR either to stdout or \fBsequence-file\fR.
+.br
+Currently this is not very clean, it can not generate pure sequence files yet.
+.br
+Once the last active slot is reached report all remaining slots as black to speed up this process.
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> full_download [sequence-file]\fR
+Download the current programmed sequence from PlasmaTrim(s) at \fBidentifier\fR either to stdout or \fBsequence-file\fR.
+.br
+Currently this is not very clean, it can not generate pure sequence files yet.
+.br
+Do not stop at the last active slot, get all the data from the device.
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> upload [sequence-file]\fR
+Upload the sequence file \fBsequence-file\fR or stdin to PlasmaTrim(s) at \fBidentifier\fR
+.br
+Once the last active slot is reached stop uploading and do not black out unused slots to make the upload faster.
+.br
+\fBWARNING:\fR Uploading sequences write to non-volatile memory, do not run this hundreds of thousands of times!
+.TP
+\fBptrim-client <host> [port] <security-code> <identifier> full_upload [sequence-file]\fR
+Upload the sequence file \fBsequence-file\fR or stdin to PlasmaTrim(s) at \fBidentifier\fR
+.br
+Once the last active slot is reached black out all unused slots at the cost of a longer upload time.
+.br
+\fBWARNING:\fR Uploading sequences write to non-volatile memory, do not run this hundreds of thousands of times!
+.SH OPTIONS
+.TP
+\fBhost\fR
+The host to find ptrim-server on.
+.TP
+\fBport\fR
+The port to connect over. Default 26163
+.TP
+\fBsecurity-code\fR
+A simple password or pin that is used to authenticate to the server. Special characters must be escaped.
+.TP
+\fBidentifier\fR
+The PlasmaTrim(s) to select. This can be a single serial number, multiple serial numbers, or the keyword "all". Examples:
+.br
+00B12345
+.br
+"00B12345 00B12346"
+.br
+all
+.TP
+\fBnew-name\fR
+The new name to save into the PlasmaTrim. All special characters must be escaped.
+.TP
+\fBnew-brightness\fR
+The new brightness value to store in memory. This value will be remembered after a power cycle and should be between 1 and 100.
+.TP
+\fBtemp-brightness\fR
+The temporary brightness value to be used for this command only. This value will not be remembered after a power cycle and should be between 1 and 100.
+.TP
+\fBnew-color\fR
+A hex color code to use for this command. It can be in 3 or 6 digit format, either one color for every LED or one color for all the LEDs, upper or lower case, space separation is allowed if it is wrapped in quotes. Valid examples for setting every LED to red would be:
+.br
+F00
+.br
+FF0000
+.br
+F00F00F00F00F00F00F00F00
+.br
+"F00 F00 F00 F00 F00 F00 F00 F00"
+.br
+FF0000FF0000FF0000FF0000FF0000FF0000FF0000FF0000
+.br
+"FF0000 FF0000 FF0000 FF0000 FF0000 FF0000 FF0000 FF0000"
+.TP
+\fBfade-time\fR
+How much time to take while making a fade. A single hex character is used and it conforms to the same timing scheme as the sequence timing.
+.TP
+\fBsequence-file\fR
+The path to a .ptSeq file. Both Simple Sequence Format and Multiple Sequence Formats are accepted. If no file is given the for upload stdin will be used, if no file is given for download stdout will be use.
+.SH AUTHOR
+Andrew Toy <andy at cocide dot com>
+.SH "SEE ALSO"
+.BR ptrim (1),
+.BR ptrim-server (1)

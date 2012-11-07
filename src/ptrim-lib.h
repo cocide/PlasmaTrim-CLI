@@ -1,5 +1,5 @@
 /*******************************************************
-PlasmaTrim HID communication stuffs v0.2.2
+PlasmaTrim HID communication stuffs v0.2.3
 Andrew Toy
 Started: Oct 23 2012
 
@@ -16,6 +16,7 @@ This code may be used under the GPLv3 license
 #include <wchar.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 #include "../hidapi/hidapi.h"
 
 
@@ -74,6 +75,19 @@ void readData(hid_device *handle); // just used to get the data off the buffer
 void delay(unsigned int ms); // usleep, but multi platform
 void start_comm(hid_device *handle); // start up the hid stuff and read the first chunk of data to remove any un-read data from the buffer just to make sure we are good to go
 
+
+void format_print(int tab, char *string);
+void ptrim_lib_version();
+void ptrim_version();
+void ptrim_server_version();
+void ptrim_client_version();
+
 #if __cplusplus
 }
 #endif
+
+/*
+note:
+man pages converted to c help statements using:
+export MANWIDTH=9999; man $1 | tail -n +8 | head -n -10 | sed -e 's/"/\\"/g' -e 's/       / /g' -e 's/\x1B\[[0-9]*m//g' -e 's/\x1B\[[0-9]*m//g' -e 's/^\([^ ].*\)/format_print(0, "\1");/g' -e 's/^ \([^ ].*\)/format_print(1, "\1");/g' -e 's/^  \([^ ].*\)/format_print(2, "\1");/g' -e 's/^$/format_print(0, "");/g' -e 's/^/\t/g' > output
+*/

@@ -826,3 +826,58 @@ void delay(unsigned int ms) {
 void start_comm(hid_device *handle) {
 	getSerial(handle); // just preform a random request to clear out the buffer
 }
+
+void format_print(int tab, char *string) {
+	struct winsize w;
+	ioctl(0, TIOCGWINSZ, &w);
+	int i, stop, offset = 0, width = (w.ws_col-(tab*3));
+	int len = strlen(string);
+
+	if (len == 0) {
+		printf("\r\n");
+	}
+
+	while (offset < len) {
+		for (i=0; i < tab; i++) {
+			printf("   ");
+		}
+		if (len - offset > width) {
+			stop=offset+width;
+			i=offset+width;
+			while (string [i] != ' ' && i > offset) {
+				//while we dont have a space and its not a single word
+				i--;
+			}
+			if (i != offset) {
+				//if we found the end of the newest word
+				stop=i;
+			}
+		} else {
+			stop=len;
+		}
+		
+		for (i=offset; i < stop; i++) {
+			if (i < len) {
+				//make sure we are not going over
+				printf("%c", string[i]);
+			}
+		}
+		printf("\r\n");
+		offset=stop;
+	}
+}
+
+void ptrim_lib_version() {
+	format_print(0, "PlsamaTrim Utilities by Cocide v0.3.1 - Nov 7 2012");
+	format_print(0, "Codename: \"Documentation is a must\"");
+	format_print(1, "ptrim-lib v0.2.3");
+}
+void ptrim_version() {
+	format_print(1, "ptrim v0.2.3");
+}
+void ptrim_client_version() {
+	format_print(1, "ptrim-client v0.1.1");
+}
+void ptrim_server_version() {
+	format_print(1, "ptrim-server v0.1.1");
+}

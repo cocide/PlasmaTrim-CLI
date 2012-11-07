@@ -1,5 +1,5 @@
 /*******************************************************
-PlasmaTrim CLI goodness v0.2.2
+PlasmaTrim CLI goodness v0.2.3
 Andrew Toy
 Started: Oct 23 2012
 
