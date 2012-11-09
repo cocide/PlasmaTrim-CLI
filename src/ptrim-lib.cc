@@ -432,7 +432,7 @@ int upload(hid_device *handle, char** fileData, bool blank, unsigned char id, un
 
 	memset(color,0x00,25);
 	memset(color,'0',3);
-	setColor(handle, makeColor(color, true), 1); // set it to black because were nice
+	setColor(handle, makeColor(color, true), getBrightness(handle)); // set it to black because were nice
 
 	while ( knownType && fileData[lineNumber][0] != 0x0D && fileData[lineNumber][0] != 0x0A && fileData[lineNumber][0] != 0x00) { // we know the file type and it is not the last line
 		if (lineNumber == 1) {
