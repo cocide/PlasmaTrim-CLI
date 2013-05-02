@@ -1,6 +1,8 @@
+#include <signal.h>
 #include "ptrim-server.h"
 
 int main(int argc, char* argv[]) {
+	signal(SIGPIPE, SIG_IGN);
 	struct socket_struct socket_data[MAX_CLIENTS];
 	int sockfd, port, i;
 	int optval = 1; // set SO_REUSEADDR on a socket to true (1):
